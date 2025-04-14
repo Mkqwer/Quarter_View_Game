@@ -172,22 +172,20 @@ public class Player : MonoBehaviour
             return;
 
 
-        if (ReloadDown && IsJump && !IsDodge && !IsSwap && IsFireReady)
+        if (ReloadDown && !IsJump && !IsDodge && !IsSwap && !IsFireReady)
         {
-            if (EquipWeapon.CurAmmo < EquipWeapon.maxAmmo)
-            { 
+            Debug.Log("Reload");
             Anim.SetTrigger("DoReload");
             IsReload = true;
 
              Invoke("ReloadOut", 2f);
-            }
+            
         }
     }
 
     void ReloadOut()
     {
-        int ReAmmo;
-        ReAmmo = Ammo < EquipWeapon.maxAmmo ? Ammo : EquipWeapon.maxAmmo;
+        int ReAmmo = Ammo < EquipWeapon.maxAmmo ? Ammo : EquipWeapon.maxAmmo;
         EquipWeapon.CurAmmo = ReAmmo;
         Ammo -= ReAmmo;
         IsReload = false;
@@ -227,7 +225,7 @@ public class Player : MonoBehaviour
         if (SwapDown3) WeaponIndex = 2;
         
 
-        if ((SwapDown1 || SwapDown2 || SwapDown3) && !IsJump && !IsDodge)
+        if ((SwapDown1 || SwapDown2 || SwapDown3) && !IsJump && !IsDodge && !IsReload)
         {
             if(EquipWeapon != null)
             {
