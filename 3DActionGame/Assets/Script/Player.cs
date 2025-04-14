@@ -1,15 +1,31 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.SocialPlatforms;
+using static UnityEngine.Rendering.DebugUI.Table;
 
 public class Player : MonoBehaviour
 {
     public float PlayerSpeed;       
     public GameObject[] Weapons;   
-    public bool[] HasWeapons;       
+    public bool[] HasWeapons;
+    public GameObject[] Grenades;
+    public int HasGrenades;
+    public Camera FollowCamera;
+
+    public int Ammo;
+    public int Coin;
+    public int Health;
+    
+    public int MaxAmmo;
+    public int MaxCoin;
+    public int MaxHealth;
+    public int MaxHasGrenades;
 
     float hAxis;
     float vAxis;
+    float FireDelay;
 
     bool WalkDown;
     bool JumpDown;
@@ -18,6 +34,12 @@ public class Player : MonoBehaviour
     bool SwapDown2;
     bool SwapDown3;
 
+    bool FireDown;
+    bool ReloadDown;
+
+    bool IsReload;
+    bool IsFireReady = true;
+    bool IsBorder;
     bool IsJump;
     bool IsDodge;
     bool IsSwap;
@@ -31,7 +53,7 @@ public class Player : MonoBehaviour
     Animator Anim;
     
     GameObject NearObject;
-    GameObject EquipWeapon;
+    Weapon EquipWeapon;
     int EquipWaeponIndex = -1;
     void Awake()
     {
@@ -46,6 +68,8 @@ public class Player : MonoBehaviour
         Move();
         Turn();
         Jump();
+        Attack();
+        Reload();
         Dodge();
         Swap();
         Interation();
@@ -58,10 +82,12 @@ public class Player : MonoBehaviour
         WalkDown = Input.GetButton("Walk");
         JumpDown = Input.GetButtonDown("Jump");
         iDown = Input.GetButtonDown("Interation");
+        FireDown = Input.GetButton("Fire1");
+        ReloadDown = Input.GetButtonDown("Reload");
         SwapDown1 = Input.GetButtonDown("Swap1");
         SwapDown2 = Input.GetButtonDown("Swap2");
         SwapDown3 = Input.GetButtonDown("Swap3");
-
+        
     }
 
     void Move()
@@ -71,15 +97,18 @@ public class Player : MonoBehaviour
         if (IsDodge)
             MoveVec = DodgeVec;
 
-        if (IsSwap)
+        if (IsSwap || IsReload || !IsFireReady)
             MoveVec = Vector3.zero;
 
         //충돌하는 방향은 무시
         if (IsSide && MoveVec == SideVec)
             MoveVec = Vector3.zero;
 
+        if (!IsBorder)
+            transform.position += MoveVec * PlayerSpeed * (WalkDown ? 0.3f : 1f) * Time.deltaTime;
 
-        transform.position += MoveVec * PlayerSpeed * (WalkDown ? 0.3f : 1f) * Time.deltaTime;
+
+      
         // bool 형태 조건 ? = true / : = false (삼항연산자)
 
         Anim.SetBool("IsRun", MoveVec != Vector3.zero);
@@ -89,6 +118,17 @@ public class Player : MonoBehaviour
     void Turn()
     {
         transform.LookAt(transform.position + MoveVec);
+        if (FireDown)
+        {
+            Ray Ray = FollowCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit RayHit;
+            if (Physics.Raycast(Ray, out RayHit, 100))
+            {
+                Vector3 nextVec = RayHit.point - transform.position;
+                nextVec.y = 0;
+                transform.LookAt(transform.position + nextVec);
+            }
+        }
     }
 
    
@@ -101,6 +141,56 @@ public class Player : MonoBehaviour
             Anim.SetTrigger("DoJump");
             IsJump = true;
         }
+    }
+
+    void Attack()
+    {
+        if (EquipWeapon == null)
+        { 
+            return;
+        }
+        FireDelay += Time.deltaTime;
+        IsFireReady = EquipWeapon.Rate < FireDelay;
+
+        if (FireDown && IsFireReady && !IsDodge && !IsSwap && !IsReload && !IsJump)
+        {
+            EquipWeapon.Use();
+            Anim.SetTrigger(EquipWeapon.type == Weapon.Type.Melee ? "DoSwing" : "DoShot");
+            FireDelay = 0;
+        }
+    }
+
+    void Reload()
+    {
+        if (EquipWeapon == null)
+            return;
+
+        if (EquipWeapon.type == Weapon.Type.Melee)
+            return;
+
+        if (Ammo == 0)
+            return;
+
+
+        if (ReloadDown && IsJump && !IsDodge && !IsSwap && IsFireReady)
+        {
+            if (EquipWeapon.CurAmmo < EquipWeapon.maxAmmo)
+            { 
+            Anim.SetTrigger("DoReload");
+            IsReload = true;
+
+             Invoke("ReloadOut", 2f);
+            }
+        }
+    }
+
+    void ReloadOut()
+    {
+        int ReAmmo;
+        ReAmmo = Ammo < EquipWeapon.maxAmmo ? Ammo : EquipWeapon.maxAmmo;
+        EquipWeapon.CurAmmo = ReAmmo;
+        Ammo -= ReAmmo;
+        IsReload = false;
     }
     void Dodge()
     {
@@ -140,14 +230,14 @@ public class Player : MonoBehaviour
         if ((SwapDown1 || SwapDown2 || SwapDown3) && !IsJump && !IsDodge)
         {
             if(EquipWeapon != null)
-            {               
-                EquipWeapon.SetActive(false);
+            {
+                EquipWeapon.gameObject.SetActive(false);
             }
 
             EquipWaeponIndex = WeaponIndex;
-            EquipWeapon = Weapons[WeaponIndex];
-            EquipWeapon.SetActive(true);
-            
+            EquipWeapon = Weapons[WeaponIndex].GetComponent<Weapon>();
+            EquipWeapon.gameObject.SetActive(true);
+
             Anim.SetTrigger("DoSwap");
 
             IsSwap = true;
@@ -174,6 +264,23 @@ public class Player : MonoBehaviour
             }
         }
     }
+
+    void FreezeRotation()
+    {
+        Rigid.angularVelocity = Vector3.zero;
+    }
+    void StopToWall()
+    {
+        Debug.DrawRay(transform.position, transform.forward * 5, Color.green);
+        IsBorder = Physics.Raycast(transform.position, MoveVec, 5, LayerMask.GetMask("Wall"));
+
+    }
+    void FixedUpdate()
+    {
+        FreezeRotation();
+        StopToWall();
+    }
+
     void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.tag == "Floor")
@@ -200,6 +307,40 @@ public class Player : MonoBehaviour
             SideVec = Vector3.zero;
         }
     }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if(other.tag == "Item")
+        {
+            Item item = other.GetComponent<Item>();
+            switch (item.ItemType)
+            {
+                case Item.Type.Ammo:
+                    Ammo += item.Value;
+                    if (Ammo > MaxAmmo)
+                        Ammo = MaxAmmo;
+                    break;
+                case Item.Type.Coin:
+                    Coin += item.Value;
+                    if (Coin > MaxCoin)
+                        Coin = MaxCoin;
+                    break;
+                case Item.Type.Heart:
+                    Health += item.Value;
+                    if(Health > MaxHealth)
+                       Health = MaxHealth;
+                    break;
+                case Item.Type.Grenade:
+                    Grenades[HasGrenades].SetActive(true);
+                    HasGrenades += item.Value;
+                    if (HasGrenades > MaxHasGrenades)
+                        HasGrenades = MaxHasGrenades;
+                    break;
+            }
+            Destroy(other.gameObject);
+        }
+    }
+
 
     void OnTriggerStay(Collider other)
     {
