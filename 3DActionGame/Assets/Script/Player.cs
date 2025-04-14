@@ -136,7 +136,7 @@ public class Player : MonoBehaviour
     {
         if (JumpDown && MoveVec == Vector3.zero && !IsJump && !IsDodge && !IsSwap) 
         {
-            Rigid.AddForce(Vector3.up * 25, ForceMode.Impulse);
+            Rigid.AddForce(Vector3.up * 15, ForceMode.Impulse);
             Anim.SetBool("IsJump", true);
             Anim.SetTrigger("DoJump");
             IsJump = true;
