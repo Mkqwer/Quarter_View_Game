@@ -12,6 +12,7 @@ public class Player : MonoBehaviour
     public bool[] HasWeapons;
     public GameObject[] Grenades;
     public int HasGrenades;
+    public GameObject grenadeObj;
     public Camera FollowCamera;
 
     public int Ammo;
@@ -35,6 +36,7 @@ public class Player : MonoBehaviour
     bool SwapDown3;
 
     bool FireDown;
+    bool GrenadeDown;
     bool ReloadDown;
 
     bool IsReload;
@@ -68,6 +70,7 @@ public class Player : MonoBehaviour
         Move();
         Turn();
         Jump();
+        Grenade();
         Attack();
         Reload();
         Dodge();
@@ -83,6 +86,7 @@ public class Player : MonoBehaviour
         JumpDown = Input.GetButtonDown("Jump");
         iDown = Input.GetButtonDown("Interation");
         FireDown = Input.GetButton("Fire1");
+        GrenadeDown = Input.GetButtonDown("Fire2");
         ReloadDown = Input.GetButtonDown("Reload");
         SwapDown1 = Input.GetButtonDown("Swap1");
         SwapDown2 = Input.GetButtonDown("Swap2");
@@ -131,7 +135,6 @@ public class Player : MonoBehaviour
         }
     }
 
-   
     void Jump()
     {
         if (JumpDown && MoveVec == Vector3.zero && !IsJump && !IsDodge && !IsSwap) 
@@ -140,6 +143,32 @@ public class Player : MonoBehaviour
             Anim.SetBool("IsJump", true);
             Anim.SetTrigger("DoJump");
             IsJump = true;
+        }
+    }
+
+    void Grenade()
+    {
+        if (HasGrenades == 0)
+        {
+            return;
+        }
+        if (GrenadeDown && !IsReload && !IsSwap)
+        {
+            Ray Ray = FollowCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit RayHit;
+            if (Physics.Raycast(Ray, out RayHit, 100))
+            {
+                Vector3 nextVec = RayHit.point - transform.position;
+                nextVec.y = 10;
+
+                GameObject instantGrenade = Instantiate(grenadeObj, transform.position, transform.rotation);
+                Rigidbody rigidGrenade = instantGrenade.GetComponent<Rigidbody>();
+                rigidGrenade.AddForce(nextVec, ForceMode.Impulse);
+                rigidGrenade.AddTorque(Vector3.back * 10, ForceMode.Impulse);
+
+                HasGrenades--;
+                Grenades[HasGrenades].SetActive(false);
+            }
         }
     }
 
@@ -261,9 +290,7 @@ public class Player : MonoBehaviour
                 Destroy(NearObject);
             }
         }
-    }
-
-    void FreezeRotation()
+    }    void FreezeRotation()
     {
         Rigid.angularVelocity = Vector3.zero;
     }
@@ -278,7 +305,6 @@ public class Player : MonoBehaviour
         FreezeRotation();
         StopToWall();
     }
-
     void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.tag == "Floor")
@@ -305,7 +331,6 @@ public class Player : MonoBehaviour
             SideVec = Vector3.zero;
         }
     }
-
     void OnTriggerEnter(Collider other)
     {
         if(other.tag == "Item")
@@ -338,8 +363,6 @@ public class Player : MonoBehaviour
             Destroy(other.gameObject);
         }
     }
-
-
     void OnTriggerStay(Collider other)
     {
         if(other.tag == "Weapon")
