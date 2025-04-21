@@ -290,7 +290,8 @@ public class Player : MonoBehaviour
                 Destroy(NearObject);
             }
         }
-    }    void FreezeRotation()
+    }  
+    void FreezeRotation()
     {
         Rigid.angularVelocity = Vector3.zero;
     }
