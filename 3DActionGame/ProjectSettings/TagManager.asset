@@ -10,6 +10,7 @@ TagManager:
   - Weapon
   - Melee
   - Range
+  - Bullet
   layers:
   - Default
   - TransparentFX
@@ -23,9 +24,9 @@ TagManager:
   - BulletCase
   - 
   - 
-  - 
-  - 
-  - 
+  - Wall
+  - Enemy
+  - EnemyDead
   - 
   - 
   - 

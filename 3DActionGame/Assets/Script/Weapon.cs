@@ -8,7 +8,7 @@ public class Weapon : MonoBehaviour
     public enum Type { Melee, Range };
     public Type type;
     public float Rate;
-    public int Damage;
+    public int damage;
     public int maxAmmo;
     public int CurAmmo;
 
@@ -35,7 +35,7 @@ public class Weapon : MonoBehaviour
 
     IEnumerator Swing()
     {
-        yield return new WaitForSeconds(0.1f);
+        yield return new WaitForSeconds(0.4f);
         MeleeArea.enabled = true;
         TrailEffect.enabled = true;
 

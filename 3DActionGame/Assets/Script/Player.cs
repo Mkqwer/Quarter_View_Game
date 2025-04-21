@@ -95,7 +95,7 @@ public class Player : MonoBehaviour
         MoveVec = new Vector3(hAxis, 0, vAxis).normalized;
 
         if (IsDodge)
-            MoveVec = DodgeVec;
+            DodgeVec = MoveVec;
 
         if (IsSwap || IsReload || !IsFireReady)
             MoveVec = Vector3.zero;
@@ -172,7 +172,7 @@ public class Player : MonoBehaviour
             return;
 
 
-        if (ReloadDown && !IsJump && !IsDodge && !IsSwap && !IsFireReady)
+        if (ReloadDown && !IsJump && !IsDodge && !IsSwap && IsFireReady)
         {
             Debug.Log("Reload");
             Anim.SetTrigger("DoReload");
