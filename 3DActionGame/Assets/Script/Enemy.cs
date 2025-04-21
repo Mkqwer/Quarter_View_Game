@@ -1,23 +1,59 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class Enemy : MonoBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public int maxHealth;
     public int curHealth;
+    public Transform Target;
+    public bool IsChase;
 
     Rigidbody rigid;
     BoxCollider boxCollider;
     Material Mat;
+    NavMeshAgent nav;
+    Animator anim;
 
     void Awake()
     {
         rigid = GetComponent<Rigidbody>();
         boxCollider = GetComponent<BoxCollider>();
-        Mat = GetComponent<MeshRenderer>().material;
+        Mat = GetComponentInChildren<MeshRenderer>().material;
+        nav = GetComponent<NavMeshAgent>();
+        anim = GetComponentInChildren<Animator>();
+
+        Invoke("ChaseStart", 2);
     }
 
+    void ChaseStart()
+    {
+        IsChase = true;
+        anim.SetBool("IsWalk", true);
+    }
+
+    void Update()
+    {
+        if (IsChase)
+        {
+            nav.SetDestination(Target.position);
+        }
+    }
+
+    void FreezeVelocity()
+    {
+        if (IsChase)
+        {
+            rigid.linearVelocity = Vector3.zero;
+            rigid.angularVelocity = Vector3.zero;
+        }
+    }
+
+    void FixedUpdate()
+    {
+        FreezeVelocity();
+    }
     void OnTriggerEnter(Collider other)
     {
         if (other.tag == "Melee")
@@ -58,6 +94,9 @@ public class Enemy : MonoBehaviour
         {
             Mat.color = Color.black;
             gameObject.layer = 14;
+            IsChase = false;
+            nav.enabled = false;
+            anim.SetTrigger("DoDie");
 
             if (IsGrenade)
             {
