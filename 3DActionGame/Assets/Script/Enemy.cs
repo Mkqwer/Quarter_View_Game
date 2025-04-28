@@ -4,11 +4,16 @@ using UnityEngine.AI;
 
 public class Enemy : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    public enum Type { A, B, C };
+    public Type EnemyType;
+
     public int maxHealth;
     public int curHealth;
     public Transform Target;
+    public BoxCollider meleeArea;
+    public GameObject bullet;
     public bool IsChase;
+    public bool IsAttack;
 
     Rigidbody rigid;
     BoxCollider boxCollider;
@@ -35,9 +40,10 @@ public class Enemy : MonoBehaviour
 
     void Update()
     {
-        if (IsChase)
+        if (nav.enabled)
         {
             nav.SetDestination(Target.position);
+            nav.isStopped = !IsChase;
         }
     }
 
@@ -50,8 +56,81 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    void Targerting()
+    {
+        float targetRadius = 1.5f;
+        float targetRange = 3f;
+
+        switch (EnemyType)
+        {
+            case Type.A:
+                targetRadius = 1.5f;
+                targetRange = 3f;
+                break;
+            case Type.B:
+                targetRadius = 1f;
+                targetRange = 12f;
+                break;
+            case Type.C:
+                targetRadius = 0.5f;
+                targetRange = 25f;
+
+                break;
+        }
+
+        RaycastHit[] rayHits =
+            Physics.SphereCastAll(transform.position, targetRadius, transform.forward, targetRange, LayerMask.GetMask("Player"));
+
+        if (rayHits.Length > 0 && !IsAttack) {
+            StartCoroutine(Attack());
+        }
+    }
+
+    IEnumerator Attack()
+    {
+        IsChase = false;
+        IsAttack = true;
+        anim.SetBool("IsAttack", true);
+
+
+        switch (EnemyType)
+        {
+            case Type.A:
+                yield return new WaitForSeconds(0.2f);
+                meleeArea.enabled = true;
+
+                yield return new WaitForSeconds(1f);
+                meleeArea.enabled = false;
+
+                yield return new WaitForSeconds(1f);
+                break;
+            case Type.B:
+                yield return new WaitForSeconds(0.1f); 
+                rigid.AddForce(transform.forward * 20, ForceMode.Impulse);
+                meleeArea.enabled = true;
+
+                yield return new WaitForSeconds(0.5f);
+                rigid.linearVelocity = Vector3.zero;
+                meleeArea.enabled = false;
+
+                yield return new WaitForSeconds(2f);
+                break;
+            case Type.C:
+                yield return new WaitForSeconds(0.5f); 
+                GameObject instantBullet = Instantiate(bullet, transform.position, transform.rotation);
+                Rigidbody rigidBullet = instantBullet.GetComponent<Rigidbody>();
+                rigidBullet.linearVelocity = transform.forward * 20;
+
+                yield return new WaitForSeconds(2f); 
+                break;
+        }
+        IsChase = true;
+        IsAttack = false;
+        anim.SetBool("IsAttack", false);
+    }
     void FixedUpdate()
     {
+        Targerting();
         FreezeVelocity();
     }
     void OnTriggerEnter(Collider other)

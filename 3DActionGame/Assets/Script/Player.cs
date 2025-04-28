@@ -45,6 +45,7 @@ public class Player : MonoBehaviour
     bool IsJump;
     bool IsDodge;
     bool IsSwap;
+    bool IsDamage;
 
     bool IsSide; //벽 충돌 유무
     Vector3 SideVec; //벽 충돌 방향 저장
@@ -53,7 +54,8 @@ public class Player : MonoBehaviour
 
     Rigidbody Rigid;
     Animator Anim;
-    
+    MeshRenderer[] meshs;
+
     GameObject NearObject;
     Weapon EquipWeapon;
     int EquipWaeponIndex = -1;
@@ -61,6 +63,7 @@ public class Player : MonoBehaviour
     {
         Rigid = GetComponent<Rigidbody>();
         Anim = GetComponentInChildren<Animator>();
+        meshs = GetComponentsInChildren<MeshRenderer>();
     }
 
     // Update is called once per frame
@@ -362,6 +365,33 @@ public class Player : MonoBehaviour
                     break;
             }
             Destroy(other.gameObject);
+        }
+        else if (other.tag == "EnemyBullet")
+        {
+            if (!IsDamage)
+            { 
+            Bullet enemyBullet = other.GetComponent<Bullet>();
+            Health -= enemyBullet.damage;
+            if (other.GetComponent<Rigidbody>() != null) 
+                Destroy(other.gameObject);
+            StartCoroutine(OnDamage());
+            }
+        }
+    }
+
+    IEnumerator OnDamage()
+    {
+        IsDamage = true;
+        foreach (MeshRenderer mesh in meshs)
+        {
+            mesh.material.color = Color.red;
+        }
+        yield return new WaitForSeconds(1f);
+
+        IsDamage = false;
+        foreach (MeshRenderer mesh in meshs)
+        {
+            mesh.material.color = Color.white;
         }
     }
     void OnTriggerStay(Collider other)
