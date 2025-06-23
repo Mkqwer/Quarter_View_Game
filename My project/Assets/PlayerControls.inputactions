@@ -49,6 +49,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
+                },
+                {
+                    "name": "Debug",
+                    "type": "Button",
+                    "id": "867b14cc-2568-4625-94be-e53eae6018ca",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -77,7 +86,7 @@
                 {
                     "name": "down",
                     "id": "d92a3c82-3cbc-49ed-9c2a-b9363f9cf337",
-                    "path": "",
+                    "path": "<Keyboard>/s",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -148,6 +157,17 @@
                     "processors": "",
                     "groups": ";Player",
                     "action": "Attack",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "434735d7-6d42-46d1-b80d-ab1b9d584574",
+                    "path": "<Keyboard>/k",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Player",
+                    "action": "Debug",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
